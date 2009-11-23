@@ -6,3 +6,6 @@ inc
 pm_to_blib
 MANIFEST
 Makefile.old
+ignore/
+Keyword.c
+*.bs
