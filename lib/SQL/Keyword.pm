@@ -7,6 +7,7 @@ our $VERSION = '0.01';
 use Carp;
 use DBI;
 use List::MoreUtils qw(uniq);
+use PadWalker; # TODO: remove deps for PadWalker
 use base qw(Exporter);
 
 require XSLoader;
@@ -31,7 +32,7 @@ sub _to_func {
     if ($op =~ /^EXEC\s+(.*)$/) {
         return ('sql_prepare_exec', "$1 $suffix", @params);
     } elsif ($op =~ /^SELECT(\s+ROW|)(\s+AS\s+HASH|)/) {
-        my $as_hash = $2 ? '1' : 'undef';
+        my $as_hash = $2 ? 1 : undef;
         if ($1) {
             return ('sql_selectrow', $as_hash, "SELECT $suffix", @params);
         } else {
@@ -45,6 +46,7 @@ sub _to_func {
 sub _quote_vars {
     my $src = shift;
     my $out = '';
+    my $my = PadWalker::peek_my(3); # This is just a hack, silly.
     my @params;
     while ($src =~ /(\$|\{)/) {
         $out .= $`;
@@ -71,7 +73,7 @@ sub _quote_vars {
             }
             $var =~ s/^{(.*)}$/$1/m;
             $out .= '?';
-            push @params, $var;
+            push @params, ${$my->{$var}};
         }
     }
     $out .= $src;

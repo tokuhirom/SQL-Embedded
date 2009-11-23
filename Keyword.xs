@@ -52,19 +52,21 @@ FINISHED:
 // -----------------------------------------------------
 // hook code
 #define MY_CHECK(x) \
-	(keyword_len == sizeof(x)-1 && strnEQ(keyword_ptr, x, sizeof(x)-1) && hint_active(hintkey_sv))
+    if (keyword_len == sizeof(x)-1 && strnEQ(keyword_ptr, x, sizeof(x)-1) && hint_active(hintkey_sv)) { \
+		*op_ptr = do_parse_sql(x " "); \
+		return KEYWORD_PLUGIN_EXPR; \
+    }
 static int my_keyword_plugin(pTHX_
 	char *keyword_ptr, STRLEN keyword_len, OP **op_ptr)
 {
-	if (MY_CHECK("SELECT")) {
-		*op_ptr = do_parse_sql("SELECT ");
-		return KEYWORD_PLUGIN_EXPR;
-	} else if (MY_CHECK("EXEC")) {
-		*op_ptr = do_parse_sql("EXEC ");
-		return KEYWORD_PLUGIN_EXPR;
-	} else {
-		return next_keyword_plugin(aTHX_ keyword_ptr, keyword_len, op_ptr);
-	}
+    MY_CHECK("SELECT");
+    MY_CHECK("EXEC");
+    MY_CHECK("INSERT");
+    MY_CHECK("UPDATE");
+    MY_CHECK("DELETE");
+    MY_CHECK("REPLACE");
+
+    return next_keyword_plugin(aTHX_ keyword_ptr, keyword_len, op_ptr);
 }
 
 MODULE = SQL::Keyword PACKAGE = SQL::Keyword
