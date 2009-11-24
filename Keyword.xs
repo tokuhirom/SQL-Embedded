@@ -18,6 +18,7 @@ static int (*next_keyword_plugin)(pTHX_ char *, STRLEN, OP **);     // next plug
 // -----------------------------------------------------
 // the parser
 static OP *THX_do_parse_sql(pTHX_ const char *prefix, STRLEN len) {
+    // PerlIO_printf(PerlIO_stderr(), "K: %s\n", prefix);
 	OP *op;
     SV *buf = newSVpv(prefix, len);
 	while(1) {
@@ -27,6 +28,7 @@ static OP *THX_do_parse_sql(pTHX_ const char *prefix, STRLEN len) {
         case -1: // reached the end of the input text
             croak("reached to unexpected EOF in parsing embedded SQL");
         case ';': // finished.
+            lex_read_unichar(0);
             goto FINISHED;
         default: /* push to buffer */
             // PerlIO_printf(PerlIO_stderr(), "%c\n", c);

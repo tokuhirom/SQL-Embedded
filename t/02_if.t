@@ -3,7 +3,7 @@ use warnings;
 use Test::Requires 'DBD::SQLite';
 BEGIN {$ENV{FILTER_SQL_DBI} = 'dbi:SQLite:';};
 use SQL::Keyword;
-use Test::More tests => 3;
+use Test::More tests => 2;
 use Data::Dumper;
 
 my $pi = SELECT 3.14;;
@@ -15,12 +15,9 @@ my $v = 12345;
 INSERT INTO t (v) VALUES ($v);;
 INSERT INTO t (v) VALUES (67890);;
 
-my $k = SELECT ROW COUNT(*) FROM t;;
-if ($k == 1) {
-    print "1 row in table\n";
+if (SELECT ROW COUNT(*) FROM t; == 2) {
+    ok 1, "if-stmt works";
+} else {
+    fail "if-stmt doesn't works";
 }
-
-my @h = SELECT AS HASH * FROM t;;
-is $h[0]->{v}, 12345;
-is $h[1]->{v}, 67890;
 
