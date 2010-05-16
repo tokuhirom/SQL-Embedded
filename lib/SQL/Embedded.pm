@@ -1,7 +1,7 @@
 package SQL::Embedded;
 use strict;
 use warnings;
-use 5.011001;
+use 5.012000;
 our $VERSION = '0.01';
 
 use Carp;
