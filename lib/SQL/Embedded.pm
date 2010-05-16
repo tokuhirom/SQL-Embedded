@@ -12,6 +12,8 @@ use PadWalker; # TODO: remove deps for PadWalker
 require XSLoader;
 XSLoader::load(__PACKAGE__, $VERSION);
 
+our @EXPORT_OK = qw/dbh/;
+
 # entry point from xs
 # TODO: もっとコンパイル時にがんばる。
 sub _run {
@@ -29,16 +31,16 @@ sub _to_func {
     $op = uc $op;
     my ($suffix, @params) = _quote_vars($query);
     if ($op =~ /^EXEC\s+(.*)$/) {
-        return ('sql_prepare_exec', "$1 $suffix", @params);
+        return ('_sql_prepare_exec', "$1 $suffix", @params);
     } elsif ($op =~ /^SELECT(\s+ROW|)(\s+AS\s+HASH|)/) {
         my $as_hash = $2 ? 1 : undef;
         if ($1) {
-            return ('sql_selectrow', $as_hash, "SELECT $suffix", @params);
+            return ('_sql_selectrow', $as_hash, "SELECT $suffix", @params);
         } else {
-            return ('sql_selectall', $as_hash, "SELECT $suffix", @params);
+            return ('_sql_selectall', $as_hash, "SELECT $suffix", @params);
         }
     } else {
-        return ('sql_prepare_exec', "$op $suffix", @params);
+        return ('_sql_prepare_exec', "$op $suffix", @params);
     }
 }
 
@@ -101,7 +103,7 @@ sub dbh {
     ref $dbh eq 'CODE' ? $dbh->() : $dbh;
 }
 
-sub sql_prepare_exec {
+sub _sql_prepare_exec {
     my ($klass, $sql, @params) = @_;
     my $pe = __PACKAGE__->dbh->{PrintError};
     local __PACKAGE__->dbh->{PrintError} = undef;
@@ -117,7 +119,7 @@ sub sql_prepare_exec {
     $sth;
 }
 
-sub sql_selectall {
+sub _sql_selectall {
     my ($klass, $as_hash, $sql, @params) = @_;
     my $pe = __PACKAGE__->dbh->{PrintError};
     local __PACKAGE__->dbh->{PrintError} = undef;
@@ -133,7 +135,7 @@ sub sql_selectall {
     wantarray ? @$rows : $rows->[0];
 }
 
-sub sql_selectrow {
+sub _sql_selectrow {
     my ($klass, $as_hash, $sql, @params) = @_;
     my $pe = __PACKAGE__->dbh->{PrintError};
     local __PACKAGE__->dbh->{PrintError} = undef;
@@ -150,16 +152,6 @@ sub sql_selectrow {
         if $as_hash;
     @$rows ? wantarray ? @{$rows->[0]} : $rows->[0][0] : ();
 }
-
-sub quote {
-    my ( $klass, $v ) = @_;
-    __PACKAGE__->dbh->quote($v);
-}
-
-sub mysql_insert_id {
-    __PACKAGE__->dbh->{mysql_insertid};
-}
-
 
 1;
 __END__
