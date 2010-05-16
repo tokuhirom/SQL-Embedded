@@ -2,7 +2,7 @@ use strict;
 use warnings;
 use Test::Requires 'DBD::SQLite';
 BEGIN {$ENV{FILTER_SQL_DBI} = 'dbi:SQLite:';};
-use SQL::Keyword;
+use SQL::Embedded;
 use Test::More tests => 2;
 use Data::Dumper;
 

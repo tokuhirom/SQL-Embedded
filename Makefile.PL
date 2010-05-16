@@ -1,7 +1,7 @@
 use inc::Module::Install;
 use 5.012000;
-name 'SQL-Keyword';
-all_from 'lib/SQL/Keyword.pm';
+name 'SQL-Embedded';
+all_from 'lib/SQL/Embedded.pm';
 
 requires 'DBI';
 requires 'Exporter' => 5.63;

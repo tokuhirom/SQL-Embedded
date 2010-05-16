@@ -7,4 +7,4 @@ all_pod_files_spelling_ok('lib');
 __DATA__
 Tokuhiro Matsuno
 tokuhirom ASDF gmail DOT com
-SQL::Keyword
+SQL::Embedded

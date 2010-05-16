@@ -1,4 +1,4 @@
-package SQL::Keyword;
+package SQL::Embedded;
 use strict;
 use warnings;
 use 5.011001;
@@ -21,7 +21,7 @@ sub _run {
         my ($meth, @args) = _to_func($1, $2);
         __PACKAGE__->$meth(@args);
     } else {
-        Carp::confess("fatal error in SQL::Keyword: $query");
+        Carp::confess("fatal error in SQL::Embedded: $query");
     }
 }
 
@@ -167,15 +167,15 @@ __END__
 
 =head1 NAME
 
-SQL::Keyword -
+SQL::Embedded -
 
 =head1 SYNOPSIS
 
-  use SQL::Keyword;
+  use SQL::Embedded;
 
 =head1 DESCRIPTION
 
-SQL::Keyword is
+SQL::Embedded is
 
 =head1 AUTHOR
 

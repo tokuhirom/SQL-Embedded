@@ -43,10 +43,10 @@ FINISHED:
             OPf_STACKED,
             Perl_append_elem(OP_LIST,
                 Perl_prepend_elem(OP_LIST,
-                    newSVOP(OP_CONST, 0, newSVpvn("SQL::Keyword", sizeof("SQL::Keyword")-1)),
+                    newSVOP(OP_CONST, 0, newSVpvn("SQL::Embedded", sizeof("SQL::Embedded")-1)),
                     newSVOP(OP_CONST, 0, buf)),
                 newUNOP(OP_METHOD, 0,
-                    newSVOP(OP_CONST, 0, newSVpvn("SQL::Keyword::_run", sizeof("SQL::Keyword::_run")-1)))));
+                    newSVOP(OP_CONST, 0, newSVpvn("SQL::Embedded::_run", sizeof("SQL::Embedded::_run")-1)))));
     return op;
 }
 #define do_parse_sql(x) THX_do_parse_sql(aTHX_ x, sizeof(x)-1)
@@ -71,11 +71,11 @@ static int my_keyword_plugin(pTHX_
     return next_keyword_plugin(aTHX_ keyword_ptr, keyword_len, op_ptr);
 }
 
-MODULE = SQL::Keyword PACKAGE = SQL::Keyword
+MODULE = SQL::Embedded PACKAGE = SQL::Embedded
 
 BOOT:
     // initialize key for hinthash
-	hintkey_sv = newSVpvs_share("SQL::Keyword");
+	hintkey_sv = newSVpvs_share("SQL::Embedded");
 
     // inject my code to hook point.
 	next_keyword_plugin = PL_keyword_plugin;
