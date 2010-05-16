@@ -15,7 +15,6 @@ XSLoader::load(__PACKAGE__, $VERSION);
 our @EXPORT_OK = qw/dbh/;
 
 # entry point from xs
-# TODO: もっとコンパイル時にがんばる。
 sub _run_exec {
     my ($class, $prefix, $query) = @_;
     my ($suffix, @params) = _quote_vars($query, 2);
