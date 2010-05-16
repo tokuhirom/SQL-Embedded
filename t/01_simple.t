@@ -3,7 +3,7 @@ use warnings;
 use Test::Requires 'DBD::SQLite';
 BEGIN {$ENV{FILTER_SQL_DBI} = 'dbi:SQLite:';};
 use SQL::Embedded;
-use Test::More tests => 3;
+use Test::More tests => 5;
 use Data::Dumper;
 
 my $pi = SELECT 3.14;;
