@@ -16,9 +16,18 @@ our @EXPORT_OK = qw/dbh/;
 
 # entry point from xs
 # TODO: もっとコンパイル時にがんばる。
-sub _run {
+sub _run_exec {
     my ($class, $query) = @_;
-    if ($query =~ m{^(EXEC\s+(?:\S+)|SELECT(?:\s+ROW|)(?:\s+AS\s+HASH|)|INSERT|UPDATE|DELETE|REPLACE)\s+([^;]*)}) {
+    if ($query =~ m{^(EXEC\s+(?:\S+)|INSERT|UPDATE|DELETE|REPLACE)\s+([^;]*)}) {
+        my ($meth, @args) = _to_func($1, $2);
+        __PACKAGE__->$meth(@args);
+    } else {
+        Carp::confess("fatal error in SQL::Embedded: $query");
+    }
+}
+sub _run_select {
+    my ($class, $query) = @_;
+    if ($query =~ m{^(SELECT(?:\s+ROW|)(?:\s+AS\s+HASH|))\s+([^;]*)}) {
         my ($meth, @args) = _to_func($1, $2);
         __PACKAGE__->$meth(@args);
     } else {

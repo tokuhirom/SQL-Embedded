@@ -11,6 +11,7 @@ is $pi->[0], 3.14;
 
 EXEC CREATE TABLE t (v int not null);;
 
+note "insert";
 my $v = 12345;
 INSERT INTO t (v) VALUES ($v);;
 INSERT INTO t (v) VALUES (67890);;

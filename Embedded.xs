@@ -11,7 +11,7 @@ static int (*next_keyword_plugin)(pTHX_ char *, STRLEN, OP **);     // next plug
 
 // -----------------------------------------------------
 // the parser
-static OP *THX_do_parse_sql(pTHX_ const char *prefix, STRLEN len) {
+static OP *THX_do_parse_select(pTHX_ const char *prefix, STRLEN len) {
     // PerlIO_printf(PerlIO_stderr(), "K: %s\n", prefix);
 	OP *op;
     SV *buf = newSVpv(prefix, len);
@@ -40,27 +40,59 @@ FINISHED:
                     newSVOP(OP_CONST, 0, newSVpvn("SQL::Embedded", sizeof("SQL::Embedded")-1)),
                     newSVOP(OP_CONST, 0, buf)),
                 newUNOP(OP_METHOD, 0,
-                    newSVOP(OP_CONST, 0, newSVpvn("SQL::Embedded::_run", sizeof("SQL::Embedded::_run")-1)))));
+                    newSVOP(OP_CONST, 0, newSVpvn("SQL::Embedded::_run_select", sizeof("SQL::Embedded::_run_select")-1)))));
     return op;
 }
-#define do_parse_sql(x) THX_do_parse_sql(aTHX_ x, sizeof(x)-1)
+
+static OP *THX_do_parse_exec(pTHX_ const char *prefix, STRLEN len) {
+    // PerlIO_printf(PerlIO_stderr(), "K: %s\n", prefix);
+	OP *op;
+    SV *buf = newSVpv(prefix, len);
+	while(1) {
+        I32 c;
+		c = lex_peek_unichar(0);
+        switch (c) {
+        case -1: // reached the end of the input text
+            croak("reached to unexpected EOF in parsing embedded SQL");
+        case ';': // finished.
+            lex_read_unichar(0);
+            goto FINISHED;
+        default: /* push to buffer */
+            // PerlIO_printf(PerlIO_stderr(), "%c\n", c);
+            sv_catpvn(buf, (char*)&c, 1);
+            lex_read_unichar(0);
+        }
+    }
+FINISHED:
+    // PerlIO_printf(PerlIO_stderr(), "%s\n", SvPV_nolen(buf));
+    op = newUNOP(
+            OP_ENTERSUB,
+            OPf_STACKED,
+            Perl_append_elem(OP_LIST,
+                Perl_prepend_elem(OP_LIST,
+                    newSVOP(OP_CONST, 0, newSVpvn("SQL::Embedded", sizeof("SQL::Embedded")-1)),
+                    newSVOP(OP_CONST, 0, buf)),
+                newUNOP(OP_METHOD, 0,
+                    newSVOP(OP_CONST, 0, newSVpvn("SQL::Embedded::_run_exec", sizeof("SQL::Embedded::_run_exec")-1)))));
+    return op;
+}
 
 // -----------------------------------------------------
 // hook code
-#define MY_CHECK(x) \
+#define MY_CHECK(x, func) \
     if (keyword_len == sizeof(x)-1 && strnEQ(keyword_ptr, x, sizeof(x)-1) && hint_active(hintkey_sv)) { \
-		*op_ptr = do_parse_sql(x " "); \
+		*op_ptr = func(aTHX_ x " ", sizeof(x)-1+1); \
 		return KEYWORD_PLUGIN_EXPR; \
     }
 static int my_keyword_plugin(pTHX_
 	char *keyword_ptr, STRLEN keyword_len, OP **op_ptr)
 {
-    MY_CHECK("SELECT");
-    MY_CHECK("EXEC");
-    MY_CHECK("INSERT");
-    MY_CHECK("UPDATE");
-    MY_CHECK("DELETE");
-    MY_CHECK("REPLACE");
+    MY_CHECK("SELECT",  THX_do_parse_select);
+    MY_CHECK("EXEC",    THX_do_parse_exec);
+    MY_CHECK("INSERT",  THX_do_parse_exec);
+    MY_CHECK("UPDATE",  THX_do_parse_exec);
+    MY_CHECK("DELETE",  THX_do_parse_exec);
+    MY_CHECK("REPLACE", THX_do_parse_exec);
 
     return next_keyword_plugin(aTHX_ keyword_ptr, keyword_len, op_ptr);
 }
