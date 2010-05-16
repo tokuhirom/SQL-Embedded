@@ -5,6 +5,7 @@ all_from 'lib/SQL/Embedded.pm';
 
 requires 'DBI';
 requires 'Exporter' => 5.63;
+requires 'PadWalker' => 1.9;
 
 tests 't/*.t';
 author_tests 'xt';
