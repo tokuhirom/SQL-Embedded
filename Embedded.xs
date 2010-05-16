@@ -12,10 +12,10 @@ static int (*next_keyword_plugin)(pTHX_ char *, STRLEN, OP **);     // next plug
 // -----------------------------------------------------
 // the parser
 
-static OP *THX_do_parse(pTHX_ const char *prefix, STRLEN len, const char *executer, size_t executer_len) {
+static OP *THX_do_parse(pTHX_ const char *prefix, STRLEN prefix_len, const char *executer, size_t executer_len) {
     // PerlIO_printf(PerlIO_stderr(), "K: %s\n", prefix);
 	OP *op;
-    SV *buf = newSVpv(prefix, len);
+    SV *buf = newSVpv("", 0);
 	while(1) {
         I32 c;
 		c = lex_peek_unichar(0);
@@ -38,7 +38,9 @@ FINISHED:
             OPf_STACKED,
             Perl_append_elem(OP_LIST,
                 Perl_prepend_elem(OP_LIST,
-                    newSVOP(OP_CONST, 0, newSVpvn("SQL::Embedded", sizeof("SQL::Embedded")-1)),
+                    Perl_prepend_elem(OP_LIST,
+                        newSVOP(OP_CONST, 0, newSVpvn("SQL::Embedded", sizeof("SQL::Embedded")-1)),
+                        newSVOP(OP_CONST, 0, newSVpvn(prefix, prefix_len))),
                     newSVOP(OP_CONST, 0, buf)),
                 newUNOP(OP_METHOD, 0,
                     newSVOP(OP_CONST, 0, newSVpvn(executer, executer_len)))));

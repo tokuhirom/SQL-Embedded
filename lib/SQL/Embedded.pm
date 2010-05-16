@@ -17,30 +17,20 @@ our @EXPORT_OK = qw/dbh/;
 # entry point from xs
 # TODO: もっとコンパイル時にがんばる。
 sub _run_exec {
-    my ($class, $query) = @_;
-    if ($query =~ m{^EXEC\s+(\S+\s+[^;]*)}) {
-        my $query = $1;
-        my ($suffix, @params) = _quote_vars($query, 2);
-        __PACKAGE__->_sql_prepare_exec($suffix, @params);
-    } else {
-        Carp::confess("fatal error in SQL::Embedded: $query");
-    }
+    my ($class, $prefix, $query) = @_;
+    my ($suffix, @params) = _quote_vars($query, 2);
+    __PACKAGE__->_sql_prepare_exec($suffix, @params);
 }
 
 sub _run_do {
-    my ($class, $query) = @_;
-    if ($query =~ m{^(INSERT|UPDATE|DELETE|REPLACE)\s+([^;]*)}) {
-        my ($op, $query) = ($1, $2);
-        my ($suffix, @params) = _quote_vars($query, 2);
-        __PACKAGE__->_sql_prepare_exec("$op $suffix", @params);
-    } else {
-        Carp::confess("fatal error in SQL::Embedded: $query");
-    }
+    my ($class, $prefix, $query) = @_;
+    my ($suffix, @params) = _quote_vars($query, 2);
+    __PACKAGE__->_sql_prepare_exec("$prefix $suffix", @params);
 }
 
 sub _run_select {
-    my ($class, $query) = @_;
-    if ($query =~ m{^(?:SELECT(\s+ROW|)(\s+AS\s+HASH|))\s+([^;]*)}) {
+    my ($class, $prefix, $query) = @_;
+    if ($query =~ m{^(?:(\s+ROW|)(\s+AS\s+HASH|))\s+([^;]*)}) {
         my ($row, $as_hash, $query) = ($1, $2, $3);
         my ($suffix, @params) = _quote_vars($query, 2);
         if ($row) {
