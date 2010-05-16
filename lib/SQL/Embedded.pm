@@ -6,7 +6,6 @@ our $VERSION = '0.01';
 
 use Carp;
 use DBI;
-use List::MoreUtils qw(uniq);
 use PadWalker; # TODO: remove deps for PadWalker
 use parent qw(Exporter);
 
