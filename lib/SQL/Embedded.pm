@@ -18,45 +18,45 @@ our @EXPORT_OK = qw/dbh/;
 # TODO: もっとコンパイル時にがんばる。
 sub _run_exec {
     my ($class, $query) = @_;
-    if ($query =~ m{^(EXEC\s+(?:\S+)|INSERT|UPDATE|DELETE|REPLACE)\s+([^;]*)}) {
-        my ($meth, @args) = _to_func($1, $2);
-        __PACKAGE__->$meth(@args);
-    } else {
-        Carp::confess("fatal error in SQL::Embedded: $query");
-    }
-}
-sub _run_select {
-    my ($class, $query) = @_;
-    if ($query =~ m{^(SELECT(?:\s+ROW|)(?:\s+AS\s+HASH|))\s+([^;]*)}) {
-        my ($meth, @args) = _to_func($1, $2);
-        __PACKAGE__->$meth(@args);
+    if ($query =~ m{^EXEC\s+(\S+\s+[^;]*)}) {
+        my $query = $1;
+        my ($suffix, @params) = _quote_vars($query, 2);
+        __PACKAGE__->_sql_prepare_exec($suffix, @params);
     } else {
         Carp::confess("fatal error in SQL::Embedded: $query");
     }
 }
 
-sub _to_func {
-    my ($op, $query) = @_;
-    $op = uc $op;
-    my ($suffix, @params) = _quote_vars($query);
-    if ($op =~ /^EXEC\s+(.*)$/) {
-        return ('_sql_prepare_exec', "$1 $suffix", @params);
-    } elsif ($op =~ /^SELECT(\s+ROW|)(\s+AS\s+HASH|)/) {
-        my $as_hash = $2 ? 1 : undef;
-        if ($1) {
-            return ('_sql_selectrow', $as_hash, "SELECT $suffix", @params);
+sub _run_do {
+    my ($class, $query) = @_;
+    if ($query =~ m{^(INSERT|UPDATE|DELETE|REPLACE)\s+([^;]*)}) {
+        my ($op, $query) = ($1, $2);
+        my ($suffix, @params) = _quote_vars($query, 2);
+        __PACKAGE__->_sql_prepare_exec("$op $suffix", @params);
+    } else {
+        Carp::confess("fatal error in SQL::Embedded: $query");
+    }
+}
+
+sub _run_select {
+    my ($class, $query) = @_;
+    if ($query =~ m{^(?:SELECT(\s+ROW|)(\s+AS\s+HASH|))\s+([^;]*)}) {
+        my ($row, $as_hash, $query) = ($1, $2, $3);
+        my ($suffix, @params) = _quote_vars($query, 2);
+        if ($row) {
+            __PACKAGE__->_sql_selectrow($as_hash, "SELECT $suffix", @params);
         } else {
-            return ('_sql_selectall', $as_hash, "SELECT $suffix", @params);
+            __PACKAGE__->_sql_selectall($as_hash, "SELECT $suffix", @params);
         }
     } else {
-        return ('_sql_prepare_exec', "$op $suffix", @params);
+        Carp::confess("fatal error in SQL::Embedded: $query");
     }
 }
 
 sub _quote_vars {
-    my $src = shift;
+    my ($src, $level) = @_;
     my $out = '';
-    my $my = PadWalker::peek_my(3); # This is just a hack, silly.
+    my $my = PadWalker::peek_my($level); # This is just a hack, silly.
     my @params;
     while ($src =~ /(\$|\{)/) {
         $out .= $`;
