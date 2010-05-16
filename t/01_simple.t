@@ -21,7 +21,15 @@ if ($k == 1) {
     print "1 row in table\n";
 }
 
-my @h = SELECT AS HASH * FROM t;;
-is $h[0]->{v}, 12345;
-is $h[1]->{v}, 67890;
+{
+    my @h = SELECT AS HASH * FROM t;;
+    is $h[0]->{v}, 12345;
+    is $h[1]->{v}, 67890;
+}
+
+{
+    my @a = SELECT * FROM t;;
+    is $a[0]->[0], 12345;
+    is $a[1]->[0], 67890;
+}
 
