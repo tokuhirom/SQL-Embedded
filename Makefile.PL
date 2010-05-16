@@ -1,5 +1,5 @@
 use inc::Module::Install;
-use 5.011001;
+use 5.012000;
 name 'SQL-Keyword';
 all_from 'lib/SQL/Keyword.pm';
 
