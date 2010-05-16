@@ -4,12 +4,6 @@
 #include "xs_hints.h"
 #include "ppport.h"
 
-#define sv_is_glob(sv) (SvTYPE(sv) == SVt_PVGV)
-#define sv_is_regexp(sv) (SvTYPE(sv) == SVt_REGEXP)
-#define sv_is_string(sv) \
-	(!sv_is_glob(sv) && !sv_is_regexp(sv) && \
-	 (SvFLAGS(sv) & (SVf_IOK|SVf_NOK|SVf_POK|SVp_IOK|SVp_NOK|SVp_POK)))
-
 // -----------------------------------------------------
 // allocate global vars.
 static SV *hintkey_sv;                                              // key for hinthash
