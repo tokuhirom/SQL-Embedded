@@ -4,7 +4,7 @@ use warnings;
 use 5.012000;
 our $VERSION = '0.01';
 
-use Carp;
+use Carp ();
 use DBI;
 use PadWalker; # TODO: remove deps for PadWalker
 use parent qw(Exporter);
@@ -88,7 +88,7 @@ if ( defined $ENV{FILTER_SQL_DBI} ) {
             $ENV{FILTER_SQL_DBI},
             $ENV{FILTER_SQL_DBI_USERNAME} || undef,
             $ENV{FILTER_SQL_DBI_PASSWORD} || undef,
-        ) or carp DBI->errstr;
+        ) or Carp::carp(DBI->errstr);
     };
 }
 
@@ -107,11 +107,11 @@ sub sql_prepare_exec {
     local __PACKAGE__->dbh->{PrintError} = undef;
     my $sth = __PACKAGE__->dbh->prepare($sql);
     unless ($sth) {
-        carp __PACKAGE__->dbh->errstr if $pe;
+        Carp::carp(__PACKAGE__->dbh->errstr) if $pe;
         return;
     }
     unless ($sth->execute(@params)) {
-        carp __PACKAGE__->dbh->errstr if $pe;
+        Carp::carp(__PACKAGE__->dbh->errstr) if $pe;
         return;
     }
     $sth;
@@ -127,7 +127,7 @@ sub sql_selectall {
         @params,
     );
     unless ($rows) {
-        carp __PACKAGE__->dbh->errstr if $pe;
+        Carp::carp(__PACKAGE__->dbh->errstr) if $pe;
         return;
     }
     wantarray ? @$rows : $rows->[0];
@@ -143,7 +143,7 @@ sub sql_selectrow {
         @params,
     );
     unless ($rows) {
-        carp __PACKAGE__->dbh->errstr if $pe;
+        Carp::carp(__PACKAGE__->dbh->errstr) if $pe;
         return;
     }
     return @$rows ? %{$rows->[0]} : ()
