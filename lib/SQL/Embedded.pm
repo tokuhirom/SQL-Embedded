@@ -8,7 +8,7 @@ use Carp;
 use DBI;
 use List::MoreUtils qw(uniq);
 use PadWalker; # TODO: remove deps for PadWalker
-use base qw(Exporter);
+use parent qw(Exporter);
 
 require XSLoader;
 XSLoader::load(__PACKAGE__, $VERSION);
