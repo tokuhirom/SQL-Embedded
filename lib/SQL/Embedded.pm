@@ -3,11 +3,11 @@ use strict;
 use warnings;
 use 5.012000;
 our $VERSION = '0.01';
+use parent qw(Exporter);
 
 use Carp ();
 use DBI;
 use PadWalker; # TODO: remove deps for PadWalker
-use parent qw(Exporter);
 
 require XSLoader;
 XSLoader::load(__PACKAGE__, $VERSION);
