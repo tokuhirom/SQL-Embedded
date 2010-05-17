@@ -3,7 +3,7 @@ use warnings;
 use Test::Requires 'DBD::SQLite';
 BEGIN {$ENV{FILTER_SQL_DBI} = 'dbi:SQLite:';};
 use SQL::Embedded;
-use Test::More tests => 5;
+use Test::More tests => 7;
 use Data::Dumper;
 
 my $pi = SELECT 3.14;;
@@ -31,5 +31,12 @@ if ($k == 1) {
     my @a = SELECT * FROM t;;
     is $a[0]->[0], 12345;
     is $a[1]->[0], 67890;
+}
+
+{
+    my $v = 67890;
+    my @a = SELECT * FROM t WHERE v=$v;;
+    is scalar(@a), 1;
+    is $a[0]->[0], 67890;
 }
 

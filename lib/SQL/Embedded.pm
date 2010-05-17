@@ -7,7 +7,6 @@ use parent qw(Exporter);
 
 use Carp ();
 use DBI;
-use PadWalker; # TODO: remove deps for PadWalker
 
 require XSLoader;
 XSLoader::load(__PACKAGE__, $VERSION);
@@ -16,22 +15,20 @@ our @EXPORT_OK = qw/dbh/;
 
 # entry point from xs
 sub _run_exec {
-    my ($class, $prefix, $query) = @_;
-    my ($suffix, @params) = _quote_vars($query, 2);
+    my ($class, $prefix, $suffix, @params) = @_;
     __PACKAGE__->_sql_prepare_exec($suffix, @params);
 }
 
 sub _run_do {
-    my ($class, $prefix, $query) = @_;
-    my ($suffix, @params) = _quote_vars($query, 2);
+    my ($class, $prefix, $suffix, @params) = @_;
     __PACKAGE__->_sql_prepare_exec("$prefix $suffix", @params);
 }
 
 sub _run_select {
-    my ($class, $prefix, $query) = @_;
+    my ($class, $prefix, $query, @params) = @_;
+    my $foo;
     if ($query =~ m{^(?:(\s+ROW|)(\s+AS\s+HASH|))\s+([^;]*)}) {
-        my ($row, $as_hash, $query) = ($1, $2, $3);
-        my ($suffix, @params) = _quote_vars($query, 2);
+        my ($row, $as_hash, $suffix) = ($1, $2, $3);
         if ($row) {
             __PACKAGE__->_sql_selectrow($as_hash, "SELECT $suffix", @params);
         } else {
@@ -41,6 +38,8 @@ sub _run_select {
         Carp::confess("fatal error in SQL::Embedded: $query");
     }
 }
+
+=pod 
 
 sub _quote_vars {
     my ($src, $level) = @_;
@@ -78,6 +77,8 @@ sub _quote_vars {
     $out .= $src;
     return $out, @params;
 }
+
+=cut
 
 my $dbh;
 
