@@ -14,16 +14,6 @@ XSLoader::load(__PACKAGE__, $VERSION);
 our @EXPORT_OK = qw/dbh/;
 
 # entry point from xs
-sub _run_exec {
-    my ($class, $prefix, $suffix, @params) = @_;
-    __PACKAGE__->_sql_prepare_exec($suffix, @params);
-}
-
-sub _run_do {
-    my ($class, $prefix, $suffix, @params) = @_;
-    __PACKAGE__->_sql_prepare_exec("$prefix $suffix", @params);
-}
-
 sub _run_select {
     my ($class, $prefix, $query, @params) = @_;
     my $foo;
@@ -38,47 +28,6 @@ sub _run_select {
         Carp::confess("fatal error in SQL::Embedded: $query");
     }
 }
-
-=pod 
-
-sub _quote_vars {
-    my ($src, $level) = @_;
-    my $out = '';
-    my $my = PadWalker::peek_my($level); # This is just a hack, silly.
-    my @params;
-    while ($src =~ /(\$|\{)/) {
-        $out .= $`;
-        $src = $';
-        {
-            my ($var, $depth) = ($&, $& eq '$' ? 0 : 1);
-            while ($src ne '') {
-                if ($depth == 0) {
-                    last
-                        unless $src =~ /^(?:([A-Za-z0-9_]+(?:->|))|([\[\{\(]))/;
-                    $src = $';
-                    if ($1) {
-                        $var .= $1;
-                    } else {
-                        $var .= $2;
-                        $depth++;
-                    }
-                } else {
-                    last unless $src =~ /([\]\}\)](?:->|))/;
-                    $src = $';
-                    $var .= "$`$1";
-                    $depth--;
-                }
-            }
-            $var =~ s/^{(.*)}$/$1/m;
-            $out .= '?';
-            push @params, ${$my->{$var}};
-        }
-    }
-    $out .= $src;
-    return $out, @params;
-}
-
-=cut
 
 my $dbh;
 
