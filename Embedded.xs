@@ -20,7 +20,7 @@ static OP *parse_var(pTHX) {
     if(*s != '$') croak("SQL syntax error");
     while(1) {
         char c = *++s;
-        if(!isALNUM(c)) break;
+        if (!(isALNUM(c) || c == '_')) break;
     }
     if(s-start < 2) croak("SQL syntax error");
     lex_read_to(s);
@@ -36,12 +36,7 @@ static OP *parse_var(pTHX) {
     return padop;
 }
 
-static OP *do_parse_select(pTHX_ const char *prefix, STRLEN prefix_len, const char *executer, size_t executer_len) {
-    // PerlIO_printf(PerlIO_stderr(), "K: %s\n", prefix);
-	OP *op;
-    SV *query = newSVpv("", 0);
-    OP *op_vars = NULL;
-    OP * args;
+static void parse(pTHX_ SV *query, OP**op_vars) {
 	while(1) {
         I32 c;
 		c = lex_peek_unichar(0);
@@ -51,10 +46,10 @@ static OP *do_parse_select(pTHX_ const char *prefix, STRLEN prefix_len, const ch
         case '$': // vars
             {
                 OP * op = parse_var(aTHX);
-                if (op_vars) {
-                    op_vars = Perl_prepend_elem(OP_LIST, op, op_vars);
+                if (*op_vars) {
+                    *op_vars = Perl_prepend_elem(OP_LIST, op, *op_vars);
                 } else {
-                    op_vars = op;
+                    *op_vars = op;
                 }
             }
             sv_catpvn(query, "?", 1);
@@ -69,6 +64,18 @@ static OP *do_parse_select(pTHX_ const char *prefix, STRLEN prefix_len, const ch
         }
     }
 FINISHED:
+    return;
+}
+
+static OP *do_parse_select(pTHX_ const char *prefix, STRLEN prefix_len, const char *executer, size_t executer_len) {
+    // PerlIO_printf(PerlIO_stderr(), "K: %s\n", prefix);
+	OP *op;
+    SV *query = newSVpv("", 0);
+    OP *op_vars = NULL;
+    OP * args;
+
+    parse(query, &op_vars);
+
     // PerlIO_printf(PerlIO_stderr(), "%s\n", SvPV_nolen(buf));
     args = Perl_prepend_elem(OP_LIST,
                 Perl_prepend_elem(OP_LIST,
@@ -90,42 +97,15 @@ FINISHED:
 
 #define newSVpvn_const(x) newSVpvn(x, sizeof(x)-1)
 
-static OP * do_parse(pTHX_ SV *query, OP**op_vars) {
-}
-
 static OP *do_parse_exec(pTHX_ const char *prefix, STRLEN prefix_len, const char *executer, size_t executer_len) {
     // PerlIO_printf(PerlIO_stderr(), "K: %s\n", prefix);
 	OP *op;
     SV *query = newSVpv("", 0);
     OP *op_vars = NULL;
     OP * args;
-	while(1) {
-        I32 c;
-		c = lex_peek_unichar(0);
-        switch (c) {
-        case -1: // reached the end of the input text
-            croak("reached to unexpected EOF in parsing embedded SQL");
-        case '$': // vars
-            {
-                OP * op = parse_var(aTHX);
-                if (op_vars) {
-                    op_vars = Perl_prepend_elem(OP_LIST, op, op_vars);
-                } else {
-                    op_vars = op;
-                }
-            }
-            sv_catpvn(query, "?", 1);
-            break;
-        case ';': // finished.
-            lex_read_unichar(0);
-            goto FINISHED;
-        default: /* push to buffer */
-            // PerlIO_printf(PerlIO_stderr(), "%c\n", c);
-            sv_catpvn(query, (char*)&c, 1);
-            lex_read_unichar(0);
-        }
-    }
-FINISHED:
+
+    parse(query, &op_vars);
+
     // PerlIO_printf(PerlIO_stderr(), "%s\n", SvPV_nolen(buf));
     args = Perl_prepend_elem(OP_LIST,
                 newSVOP(OP_CONST, 0, newSVpvn("SQL::Embedded", sizeof("SQL::Embedded")-1)),
@@ -149,33 +129,9 @@ static OP *do_parse_do(pTHX_ const char *prefix, STRLEN prefix_len, const char *
     SV *query = newSVpv(prefix, prefix_len);
     OP *op_vars = NULL;
     OP * args;
-	while(1) {
-        I32 c;
-		c = lex_peek_unichar(0);
-        switch (c) {
-        case -1: // reached the end of the input text
-            croak("reached to unexpected EOF in parsing embedded SQL");
-        case '$': // vars
-            {
-                OP * op = parse_var(aTHX);
-                if (op_vars) {
-                    op_vars = Perl_prepend_elem(OP_LIST, op, op_vars);
-                } else {
-                    op_vars = op;
-                }
-            }
-            sv_catpvn(query, "?", 1);
-            break;
-        case ';': // finished.
-            lex_read_unichar(0);
-            goto FINISHED;
-        default: /* push to buffer */
-            // PerlIO_printf(PerlIO_stderr(), "%c\n", c);
-            sv_catpvn(query, (char*)&c, 1);
-            lex_read_unichar(0);
-        }
-    }
-FINISHED:
+
+    parse(query, &op_vars);
+
     // PerlIO_printf(PerlIO_stderr(), "%s\n", SvPV_nolen(buf));
     args = Perl_prepend_elem(OP_LIST,
                 newSVOP(OP_CONST, 0, newSVpvn("SQL::Embedded", sizeof("SQL::Embedded")-1)),
