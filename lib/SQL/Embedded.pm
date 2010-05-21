@@ -16,7 +16,6 @@ our @EXPORT_OK = qw/dbh/;
 # entry point from xs
 sub _run_select {
     my ($class, $prefix, $query, @params) = @_;
-    my $foo;
     if ($query =~ m{^(?:(\s+ROW|)(\s+AS\s+HASH|))\s+([^;]*)}) {
         my ($row, $as_hash, $suffix) = ($1, $2, $3);
         if ($row) {

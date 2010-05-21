@@ -12,12 +12,12 @@ static int (*next_keyword_plugin)(pTHX_ char *, STRLEN, OP **);     // next plug
 // -----------------------------------------------------
 // the parser
 
-static OP *parse_var(pTHX) {
+static OP *parse_var(pTHX_ I32 optype) {
     char *s = PL_parser->bufptr;
     char *start = s;
     PADOFFSET varpos;
-    OP *padop;
-    if(*s != '$') croak("SQL syntax error");
+    OP *op;
+    if (!(*s == '$' || *s == '@')) croak("SQL syntax error");
     while(1) {
         char c = *++s;
         if (!(isALNUM(c) || c == '_')) break;
@@ -31,9 +31,21 @@ static OP *parse_var(pTHX) {
     }
     if(varpos == NOT_IN_PAD || PAD_COMPNAME_FLAGS_isOUR(varpos))
         croak("SQL::Embedded only supports \"my\" variables");
-    padop = newOP(OP_PADSV, 0);
-    padop->op_targ = varpos;
-    return padop;
+    if (optype == OP_PADSV) {
+        op = newOP(optype, 0);
+        op->op_targ = varpos;
+    } else if (optype == OP_PADAV) {
+        OP *padop = newOP(OP_PADAV, 0);
+        padop->op_targ = varpos;
+
+        op = newUNOP(
+            OP_REFGEN,
+            0,
+            padop);
+    } else {
+        abort();
+    }
+    return op;
 }
 
 static void parse(pTHX_ SV *query, OP**op_vars) {
@@ -43,9 +55,9 @@ static void parse(pTHX_ SV *query, OP**op_vars) {
         switch (c) {
         case -1: // reached the end of the input text
             croak("reached to unexpected EOF in parsing embedded SQL");
-        case '$': // vars
+        case '$': // scalar vars
             {
-                OP * op = parse_var(aTHX);
+                OP * op = parse_var(aTHX_ OP_PADSV);
                 if (*op_vars) {
                     *op_vars = Perl_prepend_elem(OP_LIST, op, *op_vars);
                 } else {
@@ -53,6 +65,17 @@ static void parse(pTHX_ SV *query, OP**op_vars) {
                 }
             }
             sv_catpvn(query, "?", 1);
+            break;
+        case '@': // array vars
+            {
+                OP * op = parse_var(aTHX_ OP_PADAV);
+                if (*op_vars) {
+                    *op_vars = Perl_prepend_elem(OP_LIST, op, *op_vars);
+                } else {
+                    *op_vars = op;
+                }
+            }
+            sv_catpvn(query, "(__SQL_EMBEDDED_PLACE_HOLDER__)", sizeof("(__SQL_EMBEDDED_PLACE_HOLDER__)")-1);
             break;
         case ';': // finished.
             lex_read_unichar(0);
